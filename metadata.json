@@ -1,0 +1,8 @@
+{
+  "name": "Remix OCR Hóa Đơn \u0026 Phiếu Kho Offline",
+  "description": "Trích xuất thông minh hóa đơn GTGT và phiếu xuất/nhập kho chạy offline phong cách CamScanner, chỉnh sửa bảng biểu và xuất file Excel (.xlsx) cùng Word (.docx).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "summary":  "Kế hoạch triển khai tính năng Trích xuất OCR Hóa đơn & Phiếu kho (CamScanner-Style) chạy offline 100%, hỗ trợ chỉnh sửa bảng trực tiếp và xuất file Excel (.xlsx) / Word (.docx).",
+  "updatedAt":  "2026-10-22T01:35:48.864926494Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

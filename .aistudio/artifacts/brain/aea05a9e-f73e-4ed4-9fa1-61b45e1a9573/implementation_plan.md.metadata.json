@@ -1,0 +1,6 @@
+{
+  "summary":  "Kế hoạch chi tiết nâng cấp kiến trúc trích xuất hóa đơn & phiếu kho sang bộ ba công nghệ: OpenCV (Python) tiền xử lý ảnh, PaddleOCR nhận dạng văn bản tiếng Việt độ chính xác cao, và Ollama LLM xử lý hậu kỳ cấu trúc bảng dữ liệu, kèm cơ chế tự động fallback mượt mà.",
+  "updatedAt":  "2026-10-22T09:54:28.476216858Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
