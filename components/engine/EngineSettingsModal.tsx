@@ -123,7 +123,7 @@ export function EngineSettingsModal({
         <div className="p-6 overflow-y-auto space-y-6 text-sm text-slate-700 dark:text-slate-300">
           {/* Quick Notice */}
           <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-lg p-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-            Ứng dụng hỗ trợ cơ chế <strong>Tự động dự phòng (Smart Fallback)</strong>. Nếu Python FastAPI hoặc Ollama chưa được bật, hệ thống sẽ tự động dùng Canvas processing + Tesseract tiếng Việt để tài liệu luôn được xử lý liên tục mà không gián đoạn.
+            Ứng dụng sử dụng <strong>PaddleOCR Deep Learning tiếng Việt</strong> và <strong>Ollama LLM</strong> để trích xuất và cấu trúc hóa bảng hóa đơn / phiếu kho. Vui lòng khởi động Python FastAPI backend trên cổng 8000 trước khi thực hiện quét tài liệu.
           </div>
 
           {/* 1. OpenCV & PaddleOCR Backend Config */}

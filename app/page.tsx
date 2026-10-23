@@ -44,6 +44,7 @@ import {
   Files,
   Plus,
   Cpu,
+  AlertCircle,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -85,6 +86,7 @@ export default function HomePage() {
 
   // Sample modal open/close
   const [isSampleModalOpen, setIsSampleModalOpen] = useState<boolean>(false);
+  const [ocrErrorMessage, setOcrErrorMessage] = useState<string | null>(null);
 
   // Active step in workflow
   const [activeStep, setActiveStep] = useState<'upload_and_crop' | 'review'>('upload_and_crop');
@@ -252,7 +254,7 @@ export default function HomePage() {
       setActiveStep('review');
     } catch (err) {
       console.error('Lỗi khi phân tích OCR:', err);
-      alert('Đã xảy ra lỗi khi quét OCR: ' + (err instanceof Error ? err.message : String(err)));
+      setOcrErrorMessage(err instanceof Error ? err.message : String(err));
     } finally {
       setIsProcessing(false);
     }
@@ -288,7 +290,7 @@ export default function HomePage() {
       setActiveStep('review');
     } catch (err) {
       console.error('Lỗi OCR đơn trang:', err);
-      alert('Lỗi nhận diện: ' + (err instanceof Error ? err.message : String(err)));
+      setOcrErrorMessage(err instanceof Error ? err.message : String(err));
     } finally {
       setIsProcessing(false);
     }
@@ -627,7 +629,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Đọc ký tự:</span>
-                  <span className="font-medium text-slate-700">PaddleOCR Tiếng Việt / Tesseract</span>
+                  <span className="font-medium text-slate-700">PaddleOCR Tiếng Việt (Deep Learning)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Hậu kỳ cấu trúc:</span>
@@ -716,6 +718,56 @@ export default function HomePage() {
                 className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PaddleOCR Backend Connection / Error Modal */}
+      {ocrErrorMessage && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Chưa Kết Nối PaddleOCR Backend
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Hệ thống sử dụng thuần túy mô hình Deep Learning PaddleOCR
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 leading-relaxed font-mono">
+              {ocrErrorMessage}
+            </div>
+
+            <div className="bg-slate-900 text-slate-200 rounded-lg p-3 text-xs font-mono space-y-1.5">
+              <span className="text-[11px] text-slate-400 block font-sans">
+                Khởi động backend trên máy của bạn với lệnh sau:
+              </span>
+              <code>cd python_service && pip install -r requirements.txt && python3 main.py</code>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                onClick={() => setOcrErrorMessage(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={() => {
+                  setOcrErrorMessage(null);
+                  setIsEngineSettingsOpen(true);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors cursor-pointer shadow-sm"
+              >
+                Cấu hình Endpoint
               </button>
             </div>
           </div>

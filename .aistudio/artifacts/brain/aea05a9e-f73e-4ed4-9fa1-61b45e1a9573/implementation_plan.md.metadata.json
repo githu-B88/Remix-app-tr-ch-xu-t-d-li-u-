@@ -1,6 +1,6 @@
 {
-  "summary":  "Kế hoạch chi tiết nâng cấp kiến trúc trích xuất hóa đơn & phiếu kho sang bộ ba công nghệ: OpenCV (Python) tiền xử lý ảnh, PaddleOCR nhận dạng văn bản tiếng Việt độ chính xác cao, và Ollama LLM xử lý hậu kỳ cấu trúc bảng dữ liệu, kèm cơ chế tự động fallback mượt mà.",
-  "updatedAt":  "2026-10-22T09:54:28.476216858Z",
+  "summary":  "Kế hoạch chi tiết loại bỏ triệt để 100% Tesseract OCR, dọn dẹp toàn bộ tham chiếu và thư mục dữ liệu cũ, chuyển đổi hệ thống sang chạy thuần túy PaddleOCR Vietnamese Deep Learning và Ollama LLM, kèm cơ chế báo lỗi rõ ràng và modal hướng dẫn kết nối khi backend chưa sẵn sàng.",
+  "updatedAt":  "2026-10-23T14:56:23.494658475Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

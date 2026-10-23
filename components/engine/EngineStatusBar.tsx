@@ -34,16 +34,16 @@ export function EngineStatusBar({
 
           {/* OpenCV Status */}
           <div className="flex items-center gap-1 text-slate-400">
-            <span className={isPythonOk ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
-              OpenCV {isPythonOk ? '(Sẵn sàng)' : '(Dự phòng Canvas)'}
+            <span className={isPythonOk ? 'text-emerald-400 font-medium' : 'text-amber-400'}>
+              OpenCV {isPythonOk ? '(Sẵn sàng)' : '(Chờ backend)'}
             </span>
             <span aria-hidden="true" className="text-slate-600">·</span>
           </div>
 
           {/* PaddleOCR Status */}
           <div className="flex items-center gap-1 text-slate-400">
-            <span className={isPythonOk && status.paddleOcrReady ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
-              PaddleOCR {isPythonOk && status.paddleOcrReady ? '(Kết nối)' : '(Dự phòng Tesseract)'}
+            <span className={isPythonOk && status.paddleOcrReady ? 'text-emerald-400 font-medium' : isPythonOk ? 'text-amber-400 font-medium' : 'text-rose-400 font-medium'}>
+              PaddleOCR {isPythonOk && status.paddleOcrReady ? '(Sẵn sàng)' : isPythonOk ? '(Đang nạp model)' : '(Chưa kết nối)'}
             </span>
             <span aria-hidden="true" className="text-slate-600">·</span>
           </div>
@@ -51,7 +51,7 @@ export function EngineStatusBar({
           {/* Ollama Status */}
           <div className="flex items-center gap-1 text-slate-400">
             <span className={isOllamaOk ? 'text-indigo-400 font-medium' : 'text-slate-400'}>
-              Ollama {isOllamaOk ? `(${config.ollamaModel})` : '(Dự phòng Rule-based)'}
+              Ollama {isOllamaOk ? `(${config.ollamaModel})` : '(Chưa bật)'}
             </span>
           </div>
         </div>

@@ -48,13 +48,13 @@ export async function GET(req: NextRequest) {
     ollamaOnline = false;
   }
 
-  let activePipelineDescription = 'Dự phòng Tự động: Canvas + Tesseract.js (Offline 100%)';
+  let activePipelineDescription = 'Chưa kết nối Python Backend (PaddleOCR Cổng 8000)';
   if (pythonBackendOnline && ollamaOnline) {
     activePipelineDescription = 'Toàn diện: OpenCV + PaddleOCR + Ollama LLM';
   } else if (pythonBackendOnline) {
-    activePipelineDescription = 'Nâng cao: OpenCV + PaddleOCR (Đang chờ Ollama)';
+    activePipelineDescription = 'Tiêu chuẩn: OpenCV + PaddleOCR (Đang chờ Ollama)';
   } else if (ollamaOnline) {
-    activePipelineDescription = 'Lai ghép: Canvas + Tesseract.js + Ollama LLM Hậu kỳ';
+    activePipelineDescription = 'Đã kết nối Ollama (Đang chờ PaddleOCR backend)';
   }
 
   return NextResponse.json({

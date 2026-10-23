@@ -7,13 +7,12 @@ import {
   RecognizedWord,
 } from '@/types/ocr';
 import { loadImageElement, processImageOnCanvas } from '@/lib/image-processing';
-import { runOcrRecognition } from '@/lib/ocr-service';
 import { parseInvoiceWithBoundingBoxes } from '@/lib/table-parser';
 
 export interface PipelineProgressUpdate {
   status: string;
   progress: number;
-  engineStage: 'opencv' | 'paddle' | 'ollama' | 'fallback' | 'done';
+  engineStage: 'opencv' | 'paddle' | 'ollama' | 'done';
 }
 
 export interface PipelinePageResult {
@@ -24,17 +23,16 @@ export interface PipelinePageResult {
   lines: RecognizedLine[];
   enginesUsed: {
     preprocess: 'opencv' | 'canvas';
-    ocr: 'paddleocr' | 'tesseract';
+    ocr: 'paddleocr';
     postprocess: 'ollama' | 'rule_based';
   };
 }
 
 /**
- * Executes the complete 3-stage pipeline on a single document page:
+ * Executes the complete AI pipeline on a single document page:
  * Stage 1: OpenCV Preprocessing (Deskew, CLAHE, Shadow Removal, Bilateral Filter)
- * Stage 2: PaddleOCR Recognition (Deep Learning Text Extraction with Bounding Boxes)
+ * Stage 2: Pure PaddleOCR Recognition (Deep Learning Text Extraction with Bounding Boxes)
  * Stage 3: Ollama Post-Processing (Intelligent Typo Correction & Table Structuring)
- * With automatic, seamless fallback if any service is offline.
  */
 export async function executePagePipeline(
   page: DocumentPage,
@@ -43,22 +41,22 @@ export async function executePagePipeline(
 ): Promise<PipelinePageResult> {
   const enginesUsed: PipelinePageResult['enginesUsed'] = {
     preprocess: 'canvas',
-    ocr: 'tesseract',
+    ocr: 'paddleocr',
     postprocess: 'rule_based',
   };
 
   // -------------------------------------------------------------
-  // STAGE 1: Pre-processing (OpenCV vs Canvas Fallback)
+  // STAGE 1: Pre-processing with OpenCV
   // -------------------------------------------------------------
   onProgress?.({
     status: config.enableOpenCv
       ? `[OpenCV] Đang tiền xử lý ảnh Trang ${page.pageNumber} (Khử nghiêng, CLAHE, lọc bóng)...`
       : `Đang cắt cúp & căn chỉnh Trang ${page.pageNumber}...`,
     progress: 15,
-    engineStage: config.enableOpenCv ? 'opencv' : 'fallback',
+    engineStage: 'opencv',
   });
 
-  // Base canvas crop & rotation to prepare clean base64 image
+  // Base canvas crop & rotation to prepare clean image
   const imgEl = await loadImageElement(page.dataUrl);
   const baseProcessed = await processImageOnCanvas(imgEl, page.filters, page.crop || undefined);
   let processedDataUrl = baseProcessed.dataUrl;
@@ -71,7 +69,7 @@ export async function executePagePipeline(
         body: JSON.stringify({
           image_base64: baseProcessed.dataUrl,
           pythonUrl: config.pythonBackendUrl,
-          rotate: 0, // already applied in base crop
+          rotate: 0,
           contrast: page.filters.contrast,
           brightness: page.filters.brightness,
           mode: page.filters.mode,
@@ -88,96 +86,80 @@ export async function executePagePipeline(
           processedDataUrl = data.dataUrl;
           enginesUsed.preprocess = 'opencv';
           onProgress?.({
-            status: `[OpenCV] Hoàn tất tiền xử lý (Độ nghiêng nắn: ${data.skewAngle || 0}°)`,
+            status: `[OpenCV] Hoàn tất tiền xử lý (Độ nghiêng: ${data.skewAngle || 0}°)`,
             progress: 30,
             engineStage: 'opencv',
           });
         }
       }
     } catch {
-      // Python OpenCV service offline -> use baseProcessed
+      // Use canvas processed image as base
       enginesUsed.preprocess = 'canvas';
     }
   }
 
   // -------------------------------------------------------------
-  // STAGE 2: OCR Recognition (PaddleOCR vs Tesseract Fallback)
+  // STAGE 2: OCR Recognition (Pure PaddleOCR Deep Learning)
   // -------------------------------------------------------------
   onProgress?.({
-    status: config.enablePaddleOcr
-      ? `[PaddleOCR] Đang nhận dạng chữ tiếng Việt Trang ${page.pageNumber}...`
-      : `Đang quét OCR Trang ${page.pageNumber}...`,
-    progress: 40,
-    engineStage: config.enablePaddleOcr ? 'paddle' : 'fallback',
+    status: `[PaddleOCR] Đang quét chữ tiếng Việt độ chính xác cao Trang ${page.pageNumber}...`,
+    progress: 50,
+    engineStage: 'paddle',
   });
 
   let ocrText = '';
   let ocrLines: RecognizedLine[] = [];
   let ocrWords: RecognizedWord[] = [];
 
-  let paddleSuccess = false;
-  if (config.enablePaddleOcr) {
-    try {
-      const resp = await fetch('/api/pipeline/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_base64: processedDataUrl,
-          pythonUrl: config.pythonBackendUrl,
-        }),
-      });
+  let paddleErrorDetail = '';
+  try {
+    const resp = await fetch('/api/pipeline/ocr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_base64: processedDataUrl,
+        pythonUrl: config.pythonBackendUrl,
+      }),
+    });
 
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.success && data.lines && data.lines.length > 0) {
-          ocrText = data.text;
-          ocrLines = data.lines;
-          ocrWords = data.words || [];
-          enginesUsed.ocr = 'paddleocr';
-          paddleSuccess = true;
-          onProgress?.({
-            status: `[PaddleOCR] Đã trích xuất ${ocrLines.length} dòng văn bản (Độ tin cậy: ${data.confidence}%)`,
-            progress: 70,
-            engineStage: 'paddle',
-          });
-        }
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.success && data.lines) {
+        ocrText = data.text || '';
+        ocrLines = data.lines || [];
+        ocrWords = data.words || [];
+        onProgress?.({
+          status: `[PaddleOCR] Đã trích xuất ${ocrLines.length} dòng văn bản (Độ tin cậy: ${data.confidence}%)`,
+          progress: 75,
+          engineStage: 'paddle',
+        });
+      } else {
+        paddleErrorDetail = data.error || 'Dữ liệu trả về từ PaddleOCR không hợp lệ';
       }
-    } catch {
-      // PaddleOCR offline
+    } else {
+      const errJson = await resp.json().catch(() => ({}));
+      paddleErrorDetail = errJson.error || `Mã phản hồi HTTP ${resp.status}`;
     }
+  } catch (err) {
+    paddleErrorDetail = err instanceof Error ? err.message : String(err);
   }
 
-  // Fallback to local Tesseract if PaddleOCR failed or was disabled
-  if (!paddleSuccess) {
-    enginesUsed.ocr = 'tesseract';
-    onProgress?.({
-      status: `[Tesseract OCR] Đang quét ký tự tiếng Việt Trang ${page.pageNumber}...`,
-      progress: 50,
-      engineStage: 'fallback',
-    });
-
-    const tessResult = await runOcrRecognition(processedDataUrl, (sub) => {
-      onProgress?.({
-        status: `[Tesseract OCR] Trang ${page.pageNumber}: ${sub.status}`,
-        progress: 45 + Math.round((sub.progress / 100) * 30),
-        engineStage: 'fallback',
-      });
-    });
-
-    ocrText = tessResult.text;
-    ocrLines = tessResult.lines;
-    ocrWords = tessResult.words;
+  // If PaddleOCR failed or was not reachable, strictly throw error
+  if (!ocrLines || ocrLines.length === 0) {
+    throw new Error(
+      `Không thể quét bằng PaddleOCR: ${paddleErrorDetail || 'Chưa khởi động Python backend'}. Vui lòng kiểm tra Python service tại ${config.pythonBackendUrl} (Lệnh chạy: cd python_service && python3 main.py).`
+    );
   }
 
   // -------------------------------------------------------------
-  // STAGE 3: Post-processing (Ollama LLM vs Rule-based Parser Fallback)
+  // STAGE 3: Post-processing (Ollama LLM or Rule-based Table Parser)
   // -------------------------------------------------------------
   onProgress?.({
     status: config.enableOllama
-      ? `[Ollama] Đang cấu trúc hóa bảng hóa đơn & sửa lỗi qua model ${config.ollamaModel}...`
-      : `Đang phân tích bảng biểu & tính toán số liệu...`,
-    progress: 80,
-    engineStage: config.enableOllama ? 'ollama' : 'fallback',
+      ? `[Ollama] Đang cấu trúc hóa bảng hóa đơn & đối soát số liệu qua model ${config.ollamaModel}...`
+      : `Đang phân tích cấu trúc bảng biểu hóa đơn...`,
+    progress: 85,
+    engineStage: 'ollama',
   });
 
   let parsedDoc: InvoiceDocument | null = null;
@@ -208,11 +190,11 @@ export async function executePagePipeline(
         }
       }
     } catch {
-      // Ollama offline
+      // Ollama service not running or timeout
     }
   }
 
-  // Fallback to Rule-based table parser if Ollama was disabled or offline
+  // Rule-based table parser fallback for PaddleOCR lines
   if (!parsedDoc) {
     enginesUsed.postprocess = 'rule_based';
     parsedDoc = parseInvoiceWithBoundingBoxes(ocrLines, ocrWords, ocrText, page.pageNumber);

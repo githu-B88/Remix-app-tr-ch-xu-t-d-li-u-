@@ -62,7 +62,7 @@ export async function checkEngineHealth(config: EngineConfig): Promise<EngineSta
     paddleOcrReady: false,
     ollamaOnline: false,
     ollamaModels: [],
-    activePipelineDescription: 'Dự phòng Tự động: Canvas + Tesseract.js (Offline 100%)',
+    activePipelineDescription: 'Chờ kết nối: Python Backend (PaddleOCR cổng 8000)',
     lastChecked: Date.now(),
   };
 }

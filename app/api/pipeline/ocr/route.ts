@@ -36,13 +36,16 @@ export async function POST(req: NextRequest) {
       // Python PaddleOCR server not running or timed out
     }
 
-    // Fallback signal so client immediately runs local offline Tesseract worker
-    return NextResponse.json({
-      fallback: true,
-      message: 'PaddleOCR backend chưa phản hồi, tự động chuyển sang Tesseract.js offline',
-    });
+    // If Python PaddleOCR server is not running or timed out
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Không thể kết nối tới PaddleOCR backend tại ${pythonUrl}. Vui lòng khởi động Python FastAPI service (lệnh: cd python_service && python3 main.py).`,
+      },
+      { status: 503 }
+    );
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg, fallback: true }, { status: 500 });
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
